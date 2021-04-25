@@ -1,3 +1,4 @@
+import { GetStaticProps } from 'next';
 import Link from 'next/link';
 import React, { useContext, useEffect, useState } from 'react';
 
@@ -11,7 +12,12 @@ import Stars from '../components/Splash/Stars';
 import SunMoon from '../components/Splash/SunMoon';
 import colors from '../styles/_variables.module.scss';
 import styles from '../styles/Home.module.scss';
+import { PageTextEntry, fetchPageTextEntries } from '../utils';
 import { AppContext } from './_app';
+
+interface HomeProps {
+  data: PageTextEntry[]
+}
 
 const opportunities = [
   {
@@ -43,11 +49,29 @@ const opportunities = [
   },
 ];
 
-export default function Home(): JSX.Element {
+export const getStaticProps: GetStaticProps = async () => {
+  const res = await fetchPageTextEntries('home');
+  const data = res ?? [];
+  return {
+    props: {data},
+  };
+};
+
+export default function Home(props: HomeProps): JSX.Element {
   const {isDay} = useContext(AppContext);
   const [ mousePos, setMousePos ] = useState<number[]>([]);
   const onMouseMove = (e: React.MouseEvent) => {
     setMousePos([ e.clientX, e.clientY ]);
+  };
+
+  const getTextEntry = (figmaId: string): string | null => {
+    // TODO: Replace with some better library function
+    for (const entry of props.data) {
+      if (entry.figmaId === figmaId) {
+        return entry.shortText;
+      }
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -60,7 +84,7 @@ export default function Home(): JSX.Element {
     <Layout>
       <div style={{ margin: 0, padding: 0 }} onMouseMove={onMouseMove}>
         <Splash
-          heading={'Let\'s get creative.'}
+          heading={getTextEntry('testFigmaId') ?? 'Let\'s get creative.'}
           description={'Creative Labs is a community of students at UCLA working together on cool projects to discover even cooler passions.'}
           buttons={[
             {url: `#${styles['who-container']}`, displayText: 'EXPLORE ↗︎'},
